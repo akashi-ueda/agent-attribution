@@ -1,0 +1,17 @@
+{
+  "_comment": "Codex host fragment. Merge this UserPromptSubmit entry into ~/.codex/hooks.json and copy reminder.py to ~/.codex/hooks/attribution_reminder.py (or point the command at this repo). The skill (plugins/attribution/skills/attribution/SKILL.md) is the same across hosts.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$HOME/.codex/hooks/attribution_reminder.py\"",
+            "timeout": 5,
+            "statusMessage": "attribution reminder"
+          }
+        ]
+      }
+    ]
+  }
+}

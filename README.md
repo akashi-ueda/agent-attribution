@@ -32,6 +32,14 @@ claude plugin install attribution@agent-attribution
 
 Restart Claude Code so the hook loads.
 
+## Install (Codex)
+
+Codex hooks live in a global `~/.codex/hooks.json`, so the wiring differs slightly.
+See [`hosts/codex/README.md`](hosts/codex/README.md) — copy the same `reminder.py`
+to `~/.codex/hooks/`, drop `SKILL.md` under a Codex plugin, and merge the
+`UserPromptSubmit` fragment. The skill and the reminder script are identical
+across hosts.
+
 ## Configuration
 
 All optional, via environment variables:
