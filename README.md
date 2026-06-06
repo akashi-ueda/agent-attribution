@@ -33,7 +33,7 @@ reply.
 |---------|--------------|
 | One-line footer | Adds a compact attribution line only when needed. |
 | Agent-agnostic core | Same rule works across Claude Code, Codex, and other agent hosts. |
-| Host adapters | Claude Code plugin included; Codex personal plugin package and hook adapter included. |
+| One package, both hosts | A single plugin folder installs on Claude Code and Codex via the same two commands. |
 | Locale support | English default, with Korean and Japanese footer labels/categories. |
 | No dependencies | Hook is a small Python script using only the standard library. |
 
@@ -50,46 +50,22 @@ Restart Claude Code so the hook loads.
 
 ### Codex
 
-Codex support has two parts:
-
-1. A personal plugin package with `.codex-plugin/plugin.json` and the shared
-   `reply-trace` skill.
-2. A `UserPromptSubmit` hook adapter that re-injects the reminder each turn.
-
-See [hosts/codex/README.md](hosts/codex/README.md).
-
-Short version:
+Same two-command flow as Claude Code:
 
 ```bash
-mkdir -p ~/.codex/plugins ~/.agents/plugins ~/.codex/hooks
-rm -rf ~/.codex/plugins/reply-trace
-mkdir -p ~/.codex/plugins/reply-trace
-cp -R hosts/codex/.codex-plugin ~/.codex/plugins/reply-trace/
-cp -R plugins/reply-trace/skills ~/.codex/plugins/reply-trace/
-test -f ~/.agents/plugins/marketplace.json || \
-  cp hosts/codex/personal-marketplace.example.json ~/.agents/plugins/marketplace.json
-cp plugins/reply-trace/hooks/reminder.py ~/.codex/hooks/reply_trace.py
+codex plugin marketplace add akashi-ueda/reply-trace
+codex plugin install reply-trace@reply-trace
 ```
 
-If `~/.agents/plugins/marketplace.json` already exists, merge only the
-`reply-trace` entry from
-[hosts/codex/personal-marketplace.example.json](hosts/codex/personal-marketplace.example.json).
-Then merge [hosts/codex/hooks.fragment.json](hosts/codex/hooks.fragment.json)
-into `~/.codex/hooks.json`, restart Codex, install `reply-trace` from the
-personal marketplace, and approve the hook trust prompt if Codex asks.
+Restart Codex, run `/hooks`, and trust the `reply-trace` hook once (plugin
+hooks are non-managed, so Codex asks before running them).
 
-Do not copy `plugins/reply-trace/hooks/hooks.json` into the Codex plugin
-package. That file is the Claude Code hook adapter. Codex uses
-`hosts/codex/hooks.fragment.json` instead.
-
-Official Codex behavior this package relies on:
-
-- Codex plugins use `.codex-plugin/plugin.json`.
-- Personal marketplaces live at `~/.agents/plugins/marketplace.json`.
-- Personal plugin folders are commonly stored under `~/.codex/plugins/`.
-- Codex discovers plugin-bundled hooks, but this project still ships a host
-  hook adapter because the reminder must run at `UserPromptSubmit` in the
-  active Codex hook layer.
+The same plugin package serves both hosts: Codex reads the legacy-compatible
+`.claude-plugin/marketplace.json`, installs from `.codex-plugin/plugin.json`,
+and auto-discovers the bundled `hooks/hooks.json`. The hook command uses
+`${CLAUDE_PLUGIN_ROOT}`, which Codex sets for plugin-hook compatibility — so no
+manual hook wiring is needed. For local development install, see
+[hosts/codex/README.md](hosts/codex/README.md).
 
 ## Configuration
 
@@ -144,13 +120,11 @@ docs/
   README.ja.md
 hosts/
   codex/
-    .codex-plugin/plugin.json
     README.md
-    hooks.fragment.json
-    personal-marketplace.example.json
 plugins/
   reply-trace/
     .claude-plugin/plugin.json
+    .codex-plugin/plugin.json
     hooks/
       hooks.json
       reminder.py

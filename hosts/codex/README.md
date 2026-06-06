@@ -1,124 +1,64 @@
-# Codex host adapter
+# Codex host
 
-The `reply-trace` rule and reminder hook are agent-agnostic. Claude Code
-loads them as a plugin (see repo root). Codex uses the same core through a
-personal plugin package plus a `UserPromptSubmit` hook adapter.
+`reply-trace` ships a single plugin package that works on both Claude Code and
+Codex. The skill (`SKILL.md`) and the `UserPromptSubmit` reminder
+(`hooks/hooks.json` + `hooks/reminder.py`) are agent-agnostic, so Codex loads
+the same files Claude Code does.
 
-## What Codex needs
+## Install (marketplace)
 
-1. **Personal plugin package** — copy the plugin into Codex's personal plugin
-   source directory:
+```bash
+codex plugin marketplace add akashi-ueda/reply-trace
+codex plugin install reply-trace@reply-trace
+```
 
-   ```bash
-   mkdir -p ~/.codex/plugins
-   rm -rf ~/.codex/plugins/reply-trace
-   mkdir -p ~/.codex/plugins/reply-trace
-   cp -R hosts/codex/.codex-plugin ~/.codex/plugins/reply-trace/
-   cp -R plugins/reply-trace/skills ~/.codex/plugins/reply-trace/
-   ```
+Restart Codex, then run `/hooks` and trust the `reply-trace` hook. Plugin-bundled
+hooks are non-managed, so Codex skips them until you review and trust the current
+definition once.
 
-   The package includes `.codex-plugin/plugin.json` and the shared
-   `skills/reply-trace/SKILL.md`.
+That's it — no manual hook wiring. Codex auto-discovers the bundled
+`hooks/hooks.json` and sets `CLAUDE_PLUGIN_ROOT` for the reminder command, so the
+same hook file runs on both hosts.
 
-   Do not copy `plugins/reply-trace/hooks/hooks.json` into the Codex plugin
-   package. That file is the Claude Code hook adapter.
+## Install (local / development)
 
-2. **Personal marketplace entry** — add this plugin to
-   `~/.agents/plugins/marketplace.json`. You can copy the example:
+To test a local checkout without the public marketplace, add a personal
+marketplace entry pointing at this repo's plugin folder:
 
-   ```bash
-   mkdir -p ~/.agents/plugins
-   test -f ~/.agents/plugins/marketplace.json || \
-     cp hosts/codex/personal-marketplace.example.json ~/.agents/plugins/marketplace.json
-   ```
+`~/.agents/plugins/marketplace.json`
 
-   If you already have a personal marketplace file, merge only the
-   `reply-trace` entry from the example. Codex resolves `source.path` relative
-   to the marketplace root, so the example uses:
+```json
+{
+  "name": "personal",
+  "plugins": [
+    {
+      "name": "reply-trace",
+      "source": { "source": "local", "path": "./plugins/reply-trace" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "interface": { "displayName": "Reply Trace" },
+      "category": "Productivity"
+    }
+  ]
+}
+```
 
-   ```json
-   {
-     "source": {
-       "source": "local",
-       "path": "./.codex/plugins/reply-trace"
-     }
-   }
-   ```
+Codex resolves `source.path` relative to the marketplace root. Point it at wherever
+this repo's `plugins/reply-trace` lives, restart Codex, install from your personal
+marketplace, and trust the hook via `/hooks`.
 
-3. **Hook adapter** — copy the same `reminder.py` and wire it into Codex hooks:
+## How it works on Codex
 
-   ```bash
-   mkdir -p ~/.codex/hooks
-   cp plugins/reply-trace/hooks/reminder.py ~/.codex/hooks/reply_trace.py
-   ```
-
-   Then merge the `UserPromptSubmit` entry from
-   [`hooks.fragment.json`](./hooks.fragment.json) into `~/.codex/hooks.json`.
-
-4. Restart Codex. Open the plugin directory, select the personal marketplace,
-   install `reply-trace`, start a new thread, and approve the hook trust prompt
-   if Codex asks.
-
-## Notes
-
-- Codex plugins use `.codex-plugin/plugin.json`.
-- Codex personal marketplaces can live at `~/.agents/plugins/marketplace.json`.
-- Codex can discover hooks bundled with enabled plugins, but this adapter keeps
-  the prompt-time reminder explicit in the active Codex hook layer.
-- `reminder.py` is identical to the Claude hook script. It only reads env config
-  and prints a reminder to stdout, which Codex adds to the prompt context.
-- Configuration env vars (`REPLY_TRACE_LABEL`, `REPLY_TRACE_LOCALE`,
+- Plugin manifest: `.codex-plugin/plugin.json` (Codex), `.claude-plugin/plugin.json` (Claude Code). Both sit in the same plugin folder.
+- Skill: `skills/reply-trace/SKILL.md`, shared.
+- Hook: `hooks/hooks.json` runs `reminder.py` at `UserPromptSubmit`. Codex
+  auto-discovers this default file; no `hooks` entry in the manifest is required.
+- Env: the hook command uses `${CLAUDE_PLUGIN_ROOT}`, which Codex sets for
+  plugin-hook compatibility (alongside its own `PLUGIN_ROOT`).
+- Config env vars (`REPLY_TRACE_LABEL`, `REPLY_TRACE_LOCALE`,
   `REPLY_TRACE_DISABLE`) work the same on both hosts. Legacy
   `AGENT_ATTRIBUTION_*` names are accepted as fallbacks.
-- Other agents can use the same model: durable instruction plus prompt-time
-  reminder/middleware, with host concepts mapped to `plugins`, `skills`, `MCP`,
-  `subagents`, and `hooks`.
 
-## 한국어
+## References
 
-Codex는 `reply-trace`를 personal plugin package와 `UserPromptSubmit` hook
-adapter로 사용합니다.
-
-```bash
-mkdir -p ~/.codex/plugins ~/.agents/plugins ~/.codex/hooks
-rm -rf ~/.codex/plugins/reply-trace
-mkdir -p ~/.codex/plugins/reply-trace
-cp -R hosts/codex/.codex-plugin ~/.codex/plugins/reply-trace/
-cp -R plugins/reply-trace/skills ~/.codex/plugins/reply-trace/
-test -f ~/.agents/plugins/marketplace.json || \
-  cp hosts/codex/personal-marketplace.example.json ~/.agents/plugins/marketplace.json
-cp plugins/reply-trace/hooks/reminder.py ~/.codex/hooks/reply_trace.py
-```
-
-기존 `~/.agents/plugins/marketplace.json`이 있으면 example 파일 전체를 덮지
-말고 `reply-trace` entry만 병합합니다. 그 다음 `hooks.fragment.json`을
-`~/.codex/hooks.json`에 병합하고 Codex를 재시작합니다. personal marketplace에서
-`reply-trace`를 설치하고, hook trust 확인이 나오면 승인합니다.
-
-`plugins/reply-trace/hooks/hooks.json`은 Claude Code 전용 hook adapter이므로
-Codex plugin package에는 복사하지 않습니다.
-
-## 日本語
-
-Codex では `reply-trace` を personal plugin package と
-`UserPromptSubmit` hook adapter として使います。
-
-```bash
-mkdir -p ~/.codex/plugins ~/.agents/plugins ~/.codex/hooks
-rm -rf ~/.codex/plugins/reply-trace
-mkdir -p ~/.codex/plugins/reply-trace
-cp -R hosts/codex/.codex-plugin ~/.codex/plugins/reply-trace/
-cp -R plugins/reply-trace/skills ~/.codex/plugins/reply-trace/
-test -f ~/.agents/plugins/marketplace.json || \
-  cp hosts/codex/personal-marketplace.example.json ~/.agents/plugins/marketplace.json
-cp plugins/reply-trace/hooks/reminder.py ~/.codex/hooks/reply_trace.py
-```
-
-既存の `~/.agents/plugins/marketplace.json` がある場合は example 全体で
-上書きせず、`reply-trace` entry だけをマージします。次に
-`hooks.fragment.json` を `~/.codex/hooks.json` にマージし、Codex を再起動します。
-personal marketplace から `reply-trace` をインストールし、hook trust の確認が
-出たら承認します。
-
-`plugins/reply-trace/hooks/hooks.json` は Claude Code 専用 hook adapter なので、
-Codex plugin package にはコピーしません。
+- [Codex — Build plugins](https://developers.openai.com/codex/plugins/build) (plugin structure, bundled hooks)
+- [Codex — Hooks](https://developers.openai.com/codex/hooks) (`UserPromptSubmit` event, trust review)

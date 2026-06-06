@@ -28,7 +28,7 @@
 |------|------|
 | 1 行 footer | 必要なときだけ簡潔な attribution 行を追加。 |
 | Agent-agnostic core | 同じルールが Claude Code、Codex、他のエージェントホストで動作。 |
-| ホスト adapter | Claude Code プラグイン同梱; Codex personal plugin package + hook adapter 同梱。 |
+| 1 パッケージ・両ホスト | 単一のプラグインフォルダーが Claude Code と Codex に同じ 2 コマンドでインストール。 |
 | Locale 対応 | 英語デフォルト、韓国語・日本語の footer ラベル/category。 |
 | 依存なし | フックは標準ライブラリのみの小さな Python スクリプト。 |
 
@@ -45,36 +45,22 @@ claude plugin install reply-trace@reply-trace
 
 ### Codex
 
-Codex 対応は 2 つの部分から成ります:
-
-1. `.codex-plugin/plugin.json` と共有 `reply-trace` スキルを含む personal plugin package。
-2. 毎ターン reminder を再注入する `UserPromptSubmit` hook adapter。
-
-詳細は [hosts/codex/README.md](../hosts/codex/README.md) を参照。
-
-要約:
+Claude Code と同じ 2 コマンド:
 
 ```bash
-mkdir -p ~/.codex/plugins ~/.agents/plugins ~/.codex/hooks
-rm -rf ~/.codex/plugins/reply-trace
-mkdir -p ~/.codex/plugins/reply-trace
-cp -R hosts/codex/.codex-plugin ~/.codex/plugins/reply-trace/
-cp -R plugins/reply-trace/skills ~/.codex/plugins/reply-trace/
-test -f ~/.agents/plugins/marketplace.json || \
-  cp hosts/codex/personal-marketplace.example.json ~/.agents/plugins/marketplace.json
-cp plugins/reply-trace/hooks/reminder.py ~/.codex/hooks/reply_trace.py
+codex plugin marketplace add akashi-ueda/reply-trace
+codex plugin install reply-trace@reply-trace
 ```
 
-既存の `~/.agents/plugins/marketplace.json` がある場合は example 全体で
-上書きせず、`reply-trace` entry だけをマージします。その後、
-[hosts/codex/hooks.fragment.json](../hosts/codex/hooks.fragment.json) の
-`UserPromptSubmit` 設定を `~/.codex/hooks.json` にマージし、Codex を再起動して
-personal marketplace から `reply-trace` をインストールし、hook trust の確認が
-出たら承認します。
+Codex を再起動し、`/hooks` で `reply-trace` フックを一度 trust します（プラグイン
+フックは non-managed なので実行前に承認が必要）。
 
-`plugins/reply-trace/hooks/hooks.json` は Claude Code 専用 hook adapter なので、
-Codex plugin package にはコピーしません。Codex は代わりに
-`hosts/codex/hooks.fragment.json` を使います。
+同じプラグインパッケージが両ホストに対応します: Codex は legacy 互換の
+`.claude-plugin/marketplace.json` を読み、`.codex-plugin/plugin.json` から
+インストールし、同梱の `hooks/hooks.json` を自動検出します。フックコマンドは
+`${CLAUDE_PLUGIN_ROOT}` を使い、Codex がプラグインフック互換のためこの変数を
+設定するので、手動のフック配線は不要です。ローカル開発インストールは
+[hosts/codex/README.md](../hosts/codex/README.md) を参照。
 
 ## 設定
 

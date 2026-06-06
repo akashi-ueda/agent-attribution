@@ -27,7 +27,7 @@ disclosure를 작고 일관되게, 항상 응답 끝에 둡니다.
 |------|------|
 | 한 줄 footer | 필요할 때만 간결한 attribution 줄 추가. |
 | Agent-agnostic core | 같은 규칙이 Claude Code, Codex, 기타 에이전트 호스트에서 동작. |
-| 호스트 adapter | Claude Code 플러그인 포함; Codex personal plugin package + hook adapter 포함. |
+| 한 패키지, 두 호스트 | 단일 플러그인 폴더가 Claude Code와 Codex에 같은 두 명령으로 설치. |
 | Locale 지원 | 영어 기본, 한국어·일본어 footer 라벨/category 제공. |
 | 무의존성 | 훅은 표준 라이브러리만 쓰는 작은 Python 스크립트. |
 
@@ -44,36 +44,22 @@ claude plugin install reply-trace@reply-trace
 
 ### Codex
 
-Codex 지원은 두 부분으로 구성됩니다:
-
-1. `.codex-plugin/plugin.json`과 공유 `reply-trace` 스킬을 담은 personal plugin package.
-2. 매 턴 reminder를 다시 주입하는 `UserPromptSubmit` hook adapter.
-
-자세히는 [hosts/codex/README.md](../hosts/codex/README.md) 참고.
-
-요약:
+Claude Code와 동일한 두 명령:
 
 ```bash
-mkdir -p ~/.codex/plugins ~/.agents/plugins ~/.codex/hooks
-rm -rf ~/.codex/plugins/reply-trace
-mkdir -p ~/.codex/plugins/reply-trace
-cp -R hosts/codex/.codex-plugin ~/.codex/plugins/reply-trace/
-cp -R plugins/reply-trace/skills ~/.codex/plugins/reply-trace/
-test -f ~/.agents/plugins/marketplace.json || \
-  cp hosts/codex/personal-marketplace.example.json ~/.agents/plugins/marketplace.json
-cp plugins/reply-trace/hooks/reminder.py ~/.codex/hooks/reply_trace.py
+codex plugin marketplace add akashi-ueda/reply-trace
+codex plugin install reply-trace@reply-trace
 ```
 
-기존 `~/.agents/plugins/marketplace.json`이 있으면 example 파일 전체를 덮지
-말고 `reply-trace` entry만 병합합니다. 그 다음
-[hosts/codex/hooks.fragment.json](../hosts/codex/hooks.fragment.json)의
-`UserPromptSubmit` 항목을 `~/.codex/hooks.json`에 병합하고, Codex를 재시작한 뒤
-personal marketplace에서 `reply-trace`를 설치하고, hook trust 확인이 나오면
-승인합니다.
+Codex를 재시작하고 `/hooks`에서 `reply-trace` 훅을 한 번 trust 합니다(플러그인
+훅은 non-managed라 실행 전 승인 필요).
 
-`plugins/reply-trace/hooks/hooks.json`은 Claude Code 전용 hook adapter이므로
-Codex plugin package에는 복사하지 않습니다. Codex는 대신
-`hosts/codex/hooks.fragment.json`을 씁니다.
+같은 플러그인 패키지가 두 호스트를 다 지원합니다: Codex는 legacy 호환
+`.claude-plugin/marketplace.json`을 읽고 `.codex-plugin/plugin.json`으로 설치한
+뒤 번들된 `hooks/hooks.json`을 자동 인식합니다. 훅 명령은
+`${CLAUDE_PLUGIN_ROOT}`를 쓰는데 Codex가 플러그인 훅 호환용으로 이 변수를
+설정하므로 수동 훅 와이어링이 필요 없습니다. 로컬 개발 설치는
+[hosts/codex/README.md](../hosts/codex/README.md) 참고.
 
 ## 설정
 
