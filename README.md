@@ -1,23 +1,44 @@
+<div align="center">
+
 # reply-trace
 
-> Make AI agent behavior visible: disclose the plugins, skills, MCP tools,
-> subagents, and hooks used for each reply.
+### See what your AI agent actually used — one transparency footer per reply.
+
+Plugins, skills, MCP tools, subagents, and hooks an agent pulled in behind the
+scenes, disclosed in a single line at the end of every answer.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Hosts](https://img.shields.io/badge/hosts-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Cursor%20%C2%B7%20Antigravity-blue)](#install)
 [![Agent agnostic](https://img.shields.io/badge/design-agent--agnostic-purple)](#agent-agnostic-core)
-[![Language](https://img.shields.io/badge/language-en%20%7C%20ko%20%7C%20ja-orange)](#language)
+[![No deps](https://img.shields.io/badge/deps-zero%20(stdlib)-brightgreen)](#agent-agnostic-core)
+[![Language](https://img.shields.io/badge/footer-en%20%7C%20ko%20%7C%20ja%20%7C%20auto-orange)](#language)
 
-Languages: **English** · [한국어](docs/README.ko.md) · [日本語](docs/README.ja.md)
+[**Install**](#install) · [Configuration](#configuration) · [How it works](#agent-agnostic-core) · [한국어](docs/README.ko.md) · [日本語](docs/README.ja.md)
 
-`reply-trace` adds a final one-line transparency footer when an agent
-uses automation behind the scenes:
+<!-- DEMO GIF: record a ~5s clip of an agent reply gaining the footer, save to docs/assets/demo.gif, then this renders it. See docs/assets/README.md. -->
+<img src="docs/assets/demo.gif" alt="reply-trace footer appended to an agent reply" width="720">
+
+</div>
+
+`reply-trace` adds a final one-line transparency footer when an agent uses
+automation behind the scenes:
 
 ```text
 Auto-used — plugins: Browser; skills: browser:control-in-app-browser; MCP: anthropicDocs/search_docs; subagents: reviewer (checks diff); hooks: pre_tool_use (checks command policy)
 ```
 
 Empty categories are dropped. If nothing was used, the footer is omitted.
+
+## Quick start
+
+```bash
+# Claude Code
+claude plugin marketplace add akashi-ueda/reply-trace
+claude plugin install reply-trace@reply-trace
+```
+
+One package covers Claude Code and Codex; an always-on rule covers Cursor and
+Antigravity. See [Install](#install) for all four hosts.
 
 ## Why
 

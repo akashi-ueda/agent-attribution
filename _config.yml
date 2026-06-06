@@ -1,0 +1,8 @@
+# GitHub Pages config. With no index.html/index.md present, GitHub Pages renders
+# README.md as the site home, so this one file turns the repo into a styled
+# single-page site. The default jekyll-relative-links plugin rewrites the
+# repo's relative .md links (docs/, hosts/) to their built pages.
+title: reply-trace
+description: See what your AI agent actually used — one transparency footer per reply.
+theme: jekyll-theme-cayman
+show_downloads: false
